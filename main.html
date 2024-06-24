@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VexFlow Random Notes - Four Bars with Chords</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #app {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2>Random Notes - Four Bars with Chords</h2>
+        <div id="output"></div>
+        <button onclick="generateNotes()">Generate New Notes</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+    <script>
+        let VF;
+
+        function initVexFlow() {
+            VF = Vex.Flow;
+        }
+
+        function generateNotes() {
+            const container = document.getElementById('output');
+            container.innerHTML = '';
+
+            const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+            renderer.resize(900, 280);
+            const context = renderer.getContext();
+
+            const staves = [];
+            const voices = [];
+            const chords = ['C', 'F', 'G'];
+
+            for (let i = 0; i < 4; i++) {
+                const staveX = i * 220;
+                const stave = new VF.Stave(staveX, 40, 200);
+                
+                if (i === 0) {
+                    stave.addClef("treble");
+                }
+                
+                stave.setContext(context).draw();
+                staves.push(stave);
+
+                const notes = ['c/4', 'd/4', 'e/4', 'f/4', 'g/4'];
+                const randomNotes = Array(4).fill().map(() => notes[Math.floor(Math.random() * notes.length)]);
+                const vfNotes = randomNotes.map(note => new VF.StaveNote({ clef: "treble", keys: [note], duration: "q" }));
+
+                const voice = new VF.Voice({ num_beats: 4, beat_value: 4 });
+                voice.addTickables(vfNotes);
+                voices.push(voice);
+
+                const formatter = new VF.Formatter().joinVoices([voice]);
+                const availableWidth = stave.width - (i === 0 ? stave.getModifierXShift() : 0);
+                formatter.format([voice], availableWidth);
+                voice.draw(context, stave);
+
+                // Add random chord name
+                const randomChord = chords[Math.floor(Math.random() * chords.length)];
+                context.save();
+                context.font = "bold 16px Arial";
+                context.fillStyle = "#1e90ff";
+                const chordX = staveX + (i === 0 ? stave.getModifierXShift() : 0) + 5;
+                context.fillText(randomChord, chordX, 160);
+                context.restore();
+            }
+
+            // Draw a single bar line at the end
+            const lastStave = staves[staves.length - 1];
+            new VF.StaveConnector(staves[0], lastStave).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(context).draw();
+        }
+
+        // Initialize VexFlow and generate initial notes when the page loads
+        window.onload = function() {
+            initVexFlow();
+            generateNotes();
+        };
+    </script>
+</body>
+</html>
